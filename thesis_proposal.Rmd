@@ -1,0 +1,296 @@
+---
+title: "THE CONCEPTUAL FRAMEWORK FOR (W)HOLISTIC DATA ANALYSIS"
+output:
+  html_document: 
+    css: "../../common/eprmd.css"
+---
+
+```{r init_silently, message=FALSE, warning=FALSE, echo=FALSE}
+options(knitr.kable.NA = ' ')
+library(knitr)
+library(kableExtra)
+```
+
+The advancements in industrialization and automation have greatly enhanced the efficiency of producing both physical and cognitive artifacts. However, achieving user satisfaction with these artifacts often proves elusive. Christopher Alexander has extensively addressed such concerns, primarily within the context of urban and building architecture. Nonetheless, the relevance of his ideas extends beyond these domains and can be applied to other fields, including enterprise data analysis. This article aims to distill Alexander's main ideas into a robust conceptual framework that can be effectively applied to data analysis practices with the aid of appropriate tools
+
+# Meta-analysis
+To clarify the concepts, we use the R language ecosystem, due to its popularity in data analysis and iterative nature, alongside the prototype of a tool developed specifically for the proposed kind of analyses:
+
+```{r init, message=FALSE}
+library(tidyverse)
+library(readxl)
+
+# Custom code for performing the analysis
+source('../wda/whoa.R')
+```
+
+This article itself is a R markdown file, encompassing both explanatory text and program code. The code snippets are displayed in gray boxes, while the corresponding output is shown in white boxes.
+
+In accordance with the Alexandrian worldview discussed in the next chapter, we approach analyses as sequences of transformations applied to the corresponding structure, referred to as the "analysis entity", in order to achieve the desired end result. The analysis process normally begins by loading relevant data observations, e.g. from the spreadsheet:
+
+```{r fig.width=8, fig.height=6}
+# Observations for meta-analysis
+analysis_obs <- read_excel('../wda/data/meta.xlsx')
+glimpse(analysis_obs)
+```
+
+The sequence is implemented as an ordered list of graphs, where each graph represents the analysis state after a specific step. Drawing inspiration from the Alexandrian properties of the living structure, we have developed functions for each transformation, along with corresponding pre- and post-transformation helper functions. These functions are organized into clusters, following a similar approach as Waguespack (2010):
+
+```{r echo=FALSE}
+trfs <- read_excel('../wda/data/meta.xlsx', sheet = 'trf_summary')
+kable(trfs[ ,2:ncol(trfs)]) %>% 
+  pack_rows(index = table(fct_inorder(trfs$cluster))) %>%
+  kable_styling(bootstrap_options = c("striped"))
+```
+
+Once all sequence steps have been performed and the analysis entity reached its maturity, the analysis concludes with a range of inferences derived from both the source data and the constructed structure. This is a visualization of the generated structure of analyses: 
+
+```{r fig.width=8, fig.height=6}
+# Initialise the analysis sequence
+meta <- analysis('meta-analysis', obs = 'analysis_obs')
+
+# Generate the structure with appropriate partitioning
+meta <- meta |>
+  grow('OBSERVATION', depth = 1, width = 0) |>
+  grow('SEQUENCE', width = 2) |> 
+  applyPartitioning('mbrp')
+
+# Output with proper randomisation
+applySeed(meta, 890) |> plot()
+```
+
+The structure of graphs, serving as the structural component, represents the lifecycle of an analysis entity within the software. While it may not be the most computationally efficient approach, the proposed implementation structure is designed to be flexible and capable of accommodating various analysis scenarios. We will now delve deeper into the details of this component:
+
+```{r fig.width=12, fig.height=10}
+# Expand the structural component and remove abstractions
+meta <- meta |>
+  grow('GRAPH', width = 2, attrs = TRUE, vals = TRUE) |>
+  void(c('INFERENCE'))
+
+# Polish the output with appropriate seed 
+applySeed(meta, seed = 725) |> plot()
+```
+
+In order to provide a visual representation of the structure, the original notation of the entity-relationship diagram (Chen, 1976) was selected as the foundation. This notation was deemed the most suitable choice due to its inherent flexibility and simplicity. The principal elements encompassed within this notation include:
+
+- *Graph* is a social network like presentation of the analysis (an *igraph* object). Its overall appearance is controlled by its attributes (e.g. sizing attribute refers to an algorithm or dataset for determining sizes of graph elements);
+
+- *Vertex/Node* corresponds to an element of the analysis graph. Its appearance is determined by its attributes (e.g. size attribute determines its size). Its label can present value of the element;
+
+- *Edge* corresponds to connection (link) between analysis elements. Its appearance is determined by its attributes (e.g. size attribute determines its width). Its label can present value assigned to the connection. There should be a correlation between the analysis graph and state of the inferential analysis in every sequence step
+
+# Alexandrian World
+Alexander (2002-2004) developed many inspirational theories, but did not define the concepts used there rigorously and used some terms in quite an unorthodox manner. His most important concepts are tackled by the model below:
+
+```{r}
+# Source data in tabular format
+concept_obs <- read_excel("../wda/data/concepts.xlsx")
+
+# Initiate the analysis sequence
+awc <- analysis("Alexandrian concepts", obs = "concept_obs")
+```
+
+## Person: Personal nature of order
+PERSON is a person or group of people having a *list* of [goals]{.underline} in mind. They have a [self]{.underline}, i.e. a *list of personality traits*.
+
+In NoO, Alexander introduces the idea of a "personal nature of order" which refers to the idea that the sense of wholeness and coherence in a living system is not only created by the physical and structural elements of that system, but also by the emotional and subjective experiences of the people who use it.
+
+Alexander argues that the personal nature of order is closely linked to the human experience of beauty and meaningfulness, and that people are naturally drawn to places and spaces that have a strong sense of personal nature of order. He claims that this emotional connection is a key factor in creating a sense of "aliveness" in architecture and urban design, and that it is essential for creating livable and sustainable built environments.
+
+He also argues that the personal nature of order is not something that can be fully designed or controlled by architects or urban planners, but rather something that emerges from the interaction between the built environment and the people who use it. He believes that the personal nature of order is created by the small-scale, everyday interactions that people have with their surroundings, such as the way they use a space, the way they decorate it, and the way they relate to the people and things around them.
+
+In summary, Alexander's idea of personal nature of order is a holistic approach to design that considers not just the physical and structural elements of a living system but also the emotional and subjective experiences of the people who use it. He believes that this emotional connection is a key factor in creating a sense of "aliveness" and that it is essential for creating livable and sustainable built environments
+
+### Self
+Alexander also discusses soul, spirit, etc. intangible entities. These can be useful metaphors. However, simple list of personality traits affecting the perception might be quite sufficient
+
+## Region: Smartly selected
+REGION *R* is a part of space [selected]{.underline} for consideration by PERSONs *O~i~*. Region consists of distinguishable [subregions]{.underline} *S~i~*. Region must be selected by having [wholeness]{.underline} generation in mind. Wholeness W is expressed as *product of force F and transformation effect T vectors* (defined later).
+
+Start unfolding the concept network:
+
+```{r fig.width=8, fig.height=6}
+# Start growing the concept structure (go deep now, wide later...)
+awc <- grow(awc, c('PERSON', 'REGION'), depth = 2, width = 0)
+
+# Separate domains
+awc <- applyPartitioning(awc, 'mbrp')
+getElements(awc) |> pull(membership) |> unique()
+
+# Output the current state
+awc
+```
+
+Region must be chosen carefully, to capture all the relevant forces. Region selection is needed for managing the complexity. Holistically, everything is connected to everything else. No temporal view so far, region only to cover spatial dimension
+
+### Wholeness
+Alexander believed that wholeness is not only found in the physical structure but also in the way that people interact with the built environment, and he emphasized the importance of participatory design process where the users, builders, and designers all have a say in the design process.
+
+He argues that wholeness is a fundamental quality that can be found in all living systems, including buildings, cities, and even entire societies. Wholeness is characterised by a sense of coherence and harmony, and that it is created by a configuration of centers.
+
+Even though it's mostly a holistic property, we should be able to describe wholeness analytically, by assessing how well the forces are resolved by transformations
+
+### Goals
+Practical needs, but also creating the sense of beauty
+
+## Centers: Living structure
+CENTERs are most coherent subREGIONS of *R*. Centers may consist of other centers (have [parent]{.underline} centers). Centers can have different degrees of [life]{.underline}, expressed by a number between 0 and 1.
+
+Display of updated structure with sequence narratives but without the generating program code:
+
+```{r echo=FALSE, fig.width=10, fig.height=8}
+awc <- grow(awc, 'CENTER', depth = 2, width = 0)
+
+# Output transformation without modifying the sequence
+nodes <- getElements(awc) |> pull(name)
+applyHighlight(awc, grep('CENTER', nodes, value = TRUE))
+```
+
+*A center is a kind of entity which can only be defined in terms of other centers. [NoO1:116]*
+
+In the context of Alexander's work, a "center" can be defined as a key element of a living system that gives it meaning and purpose. Alexander argues that centers can be found at multiple levels, from the individual components of a building to the overall structure of a city or society. He claims that the organization of these centers is what gives a living system its sense of wholeness and coherence.
+
+A center can also be defined as a point of focus or a point of interest within a building or a city, which creates a sense of hierarchy and organization, it could be a physical element, such as a courtyard or a stairwell, or it could be an abstract concept, such as a shared cultural or social value. Alexander also suggests that centers can be visual, such as a view, or it can be something that generates a feeling of security or a sense of belonging.
+
+A center is a purely geometric thing, something which depends only on the arrangement, in space, of other centers. We suppose that the structure of centers is set up mentally, there are many different ways for doing this.
+
+Couldn't to find Whitehead's center definition which Alexander couldn't find either (NoO1 App 1 footnotes)
+
+### Life
+Alexander seems to have believed that structures literally possess more or less life. It is a geometric, structural feature which is a measure of the intensity of this field. This is something we can experience, e.g. through "mirror-of-the-self test".
+
+Literal usage might cause confusion, alternative terms like *architectural life* (Salingaros, 2010) or *structural life* have been proposed. But we can approach to this also as to a metaphor. We can map relevant aspects of living systems domain to target domain or blend them together to a new concept. This is illustrated below on the example of the analysis entity, formed by conceptual mapping and blending (Fauconnier & Turner, 2008):
+
+![](../wda/pics/aoc.svg)
+
+## Forces: Shaping the structure
+FORCE is a way CENTERs affect each other, i.e. CENTERs [resolve]{.underline} FORCES. Can be of *external* (interregional) or *internal* (between centers inside R) [type]{.underline}. [Strength]{.underline} of force is expressed by *number between -1 and 1*:
+
+```{r echo=FALSE, fig.width=11, fig.height=10}
+awc <- grow(awc, 'FORCE', depth = 2, width = 0)
+
+nodes <- getElements(awc) |> pull(name)
+applyHighlight(awc, grep('FORCE', nodes, value = TRUE))
+```
+
+Forces refer to the factors that influence the personal nature of order. These factors can be physical, social, cultural, or psychological and can include things like lighting, color, texture, sound, smell, temperature, social norms, cultural values, personal experiences, and emotional states. The idea is that by understanding these forces and how they interact with each other and with the people who use a space or system, we can create more holistic and nuanced approaches to data analysis
+
+### Type
+External forces usually mean that we cannot affect them much, only to adjust
+
+### Strength
+Negative number denotes a deconstructive and positive a constructive force. Forces below certain treshold can be ignored
+
+## Feeling: Beauty and depth
+CENTERs [evoke]{.underline} FEELING in PERSON. FEELINGs are of various [type]{.underline} (*list*) and [intensity]{.underline} (*list*)
+
+```{r echo=FALSE, fig.width=11, fig.height=10}
+awc <- grow(awc, 'FEELING', depth = 2, width = 0)
+
+nodes <- getElements(awc) |> pull(name)
+applyHighlight(awc, grep('FEELING', nodes, value = TRUE))
+```
+
+*Human feeling is mostly (90%) the same, mostly the same from person to person, mostly the same in every person [NoO1:3-4]*
+
+This is close to Buddhist interpretation, emotions do not belong to the self.
+
+Tools like feeling maps and mirror-of-the-self test should help to clarify the feelings
+
+### Type
+Types: Especially life and beauty. But also centrality/centeredness [NoO1:119], harmony [NoO1:138], similarity [NoO1:161], distinction [NoO1:203], unity [NoO1:211], structural [NoO1:220], morphological [NoO1:220], familiarity [NoO1:221], connectedness [NoO1:231], not-separateness [NoO1:234], [NoO1:309], etc.
+
+*The word "feeling" has been contaminated. It is confused with emotions - with feelings (in the plural) such as wonder, sadness, anger- which confuse rather than help because they make us ask ourselves, which kind of feeling should I follow? The feeling I am talking about is unitary. It is feeling in the singular, which comes from the whole [NoO2:371]*
+
+### Intensity
+Intensity: Can be deep, subtle, bold, eerie, etc. [NoO1]
+
+## Property
+PROPERTIES describes one of the possible ways in which centers can [intensify]{.underline} each other [NoO1:241]. *Around 15* [types]{.underline} of such structural PROPERTIES
+
+*The fifteen properties are not independent. They overlap. [NoO1:237]*
+
+*Each property defines one type of spatial relationship between two or more centers, and then shows how the mutual intensification works in the framework of this relationship [NoO1:241]*
+
+```{r echo=FALSE, fig.width=11, fig.height=10}
+awc <- grow(awc, 'PROPERTY', depth = 2, width = 0)
+
+nodes <- getElements(awc) |> pull(name)
+applyHighlight(awc, grep('PROPERTY', nodes, value = TRUE))
+```
+
+### Type
+All the properties Alexander identified have been listed in the table in Meta-Analysis chapter, as inspiration for properties in data model.
+
+## Transformation
+PROPERTIES are [applied by]{.underline} each other [NoO1:241]. TRANSFORMATIONs. TRANSFORMATION [type]{.underline} is either *wholeness extending* or *wholeness destroying*
+
+Result of transformations is generated rather than fabricated structure.
+
+```{r echo=FALSE, fig.width=12, fig.height=11}
+awc <- grow(awc, 'TRANSFORMATION', depth = 2, width = 0)
+
+nodes <- getElements(awc) |> pull(name)
+applyHighlight(awc, grep('TRANSFORMATION', nodes, value = TRUE))
+```
+
+*At any given moment, in any given region of space, there is a wholeness W~t~. At the next moment, this gives way to another wholeness W~t+1~. The transformation of W~t~ to W~t+1~ is the way the world unfolds: W~t~ --\> W~t+1~. The transformation is structure-preserving (aka wholeness-extending) when the unfolding is smooth [NoO2:65]*
+
+
+*We must also have an intuitive idea of a transformation which preserves or extends a structure, and an intuitive idea of a transformation which destroys or contradicts a structure. [NoO2:55]*
+
+## Pattern
+PATTERN is a [stereotypical]{.underline} TRANSFORMATION. PATTERN [resolves]{.underline} conflicting FORCES. Frequently defined as a proven [solution]{.underline} to a [problem]{.underline} in a [context]{.underline}
+
+Patterns and transformations are closely related concepts.
+
+A pattern, as Alexander defines it, is a general rule that describes how different components of a building or city interact with one another, and that can be used to guide the design process. Alexander argues that patterns are similar to the patterns found in natural systems and that they can be used to create a sense of coherence and harmony in the built environment. He also claims that patterns are based on the principles of "centers" which are key elements of a living system that give it meaning and purpose.
+
+Transformation, on the other hand, refers to the process of change that occurs in the built environment over time. Alexander argues that the built environment is a living system that is constantly changing and evolving, and that it should be designed to be flexible and adaptable in order to respond to these changes. He claims that the process of transformation is guided by patterns and that it is essential for creating livable and sustainable built environments.
+
+In summary, patterns and transformations are closely related concepts in Christopher Alexander's work. Patterns are general rules that describe how different components of a building or city interact with one another, and that can be used to guide the design process. Transformations, on the other hand, refer to the process of change that occurs in the built environment over time, which is guided by patterns, and that is essential for creating livable and sustainable built environments
+
+```{r echo=FALSE, fig.width=13, fig.height=12}
+awc <- grow(awc, 'PATTERN', depth = 2, width = 0)
+
+nodes <- getElements(awc) |> pull(name)
+applyHighlight(awc, grep('PATTERN', nodes, value = TRUE))
+```
+
+## Sequence summary
+This is an overview of the model-creating steps:
+
+```{r fig.width=10, fig.height=16}
+signoff(awc, 2:length(awc))
+```
+
+# Hypotheses testing
+Alexander's theories and the approach proposed here require validating. The assumption is that the wholistic approach can help system developers achieve better results, and its efficacy can be measured.
+
+
+A wholistic approach should enable the consolidation of multiple views of the system into fewer ones. For example, information presented by ERD, bar plots, and component diagrams can be combined into a single view:
+
+| Traditional      | Wholistic        |
+| ---------------- | ---------------- |
+| ![](pics/imdb_erd.png){width=90%}<br>![](pics/bar_plot.png){width=90%}| ![](pics/ex3.svg){width=90%} |
+
+
+On the other hand, instead of just displaying the end result of modeling, showing the path to it might have additional benefits. Questions like the ones below can be asked for comparing the approaches:
+
+- What is X? How to get Y?
+
+- What do I remember about Z after n days?
+
+# Conclusion
+The approach proposed in this study has the potential to serve as a valuable supplement for business or data analysts, or data scientists, particularly in domains characterized by a high degree of uncertainty and emotionalism. However, in order to validate the assertions made, further investigation, such as case studies and surveys, is required. Several intricacies remain unaddressed, both in clarifying the concepts (e.g. system A vs system B) and demonstrating the prototype's capabilities, especially in polishing the structure of large models
+
+# REFERENCES
+**Alexander, Christopher (2002-2004).** The Nature of Order. Books 1 to 4. Center for Environmental Structure
+
+**Chen, Peter (1976).** "The Entity-Relationship Model - Toward a Unified View of Data". ACM Transactions on Database Systems. 1 (1): 9–36. CiteSeerX 10.1.1.523.6679. doi:10.1145/320434.320440. S2CID 52801746
+
+**Fauconnier, Gilles and Turner, Mark (2008).** The way we think: Conceptual blending and the mind’s hidden complexities. Basic Books
+
+**Salingaros, Nikos (2010).** Twelve Lectures on Architecture: algorithmic sustainable design. BoD-Books on Demand
+
+**Waguespack, Leslie J. (2010).** Thriving Systems Theory and Metaphor-Driven Modeling. Springer Science & Business Media, Reading, Massachusetts
